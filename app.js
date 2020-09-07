@@ -1,4 +1,5 @@
 var sysUtils = require('./utils');
+var awsServerlessExpressMiddleware = require('aws-serverless-express/middleware')
 
 console.log("");
 console.log("Starting Iframely...");
@@ -41,7 +42,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(sysUtils.cacheMiddleware);
-
+app.use(awsServerlessExpressMiddleware.eventContext())
 
 require('./modules/api/views')(app);
 require('./modules/debug/views')(app);

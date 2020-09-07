@@ -1,5 +1,26 @@
 language: node_js
-node_js:
-    - 10
-    - 9
-    - 8
+
+sudo: required
+
+cache:
+  directories:
+    - node_modules
+
+services:
+  - docker
+
+before_install:
+  - docker-compose up --no-start build
+  - docker-compose run build bash -c "yarn install"
+
+install: true # to avoid the default install step
+
+script:
+  - docker-compose run build bash -c "yarn test"
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: docker-compose run build bash -c "yarn deploy"
+    on:
+      branch: master
