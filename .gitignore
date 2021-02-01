@@ -15,6 +15,7 @@ lib/new/test.html
 lib/new/test.js
 
 iframely-private-plugins/
+config.providers.js
 
 cloudformation.yaml
 lambda-invoke-response.json

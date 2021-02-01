@@ -3,8 +3,15 @@ const decodeHTML5 = require('entities').decodeHTML5;
 
 module.exports = {
 
+    /**
+     * HEADS-UP: New endpoints as of Oct 24, 2020:
+     * https://developers.facebook.com/docs/instagram/oembed/
+     * Please configure your `access_token` in your local config file
+     * as desribed on https://github.com/itteco/iframely/issues/284.
+     */     
+
     re: [
-        /^https?:\/\/www\.instagram\.com\/(?:[a-zA-Z0-9_\-\.]+\/)?(?:p|tv)\/([a-zA-Z0-9_-]+)\/?/i,
+        /^https?:\/\/www\.instagram\.com\/(?:[a-zA-Z0-9_\-\.]+\/)?(?:p|tv|reel)\/([a-zA-Z0-9_-]+)\/?/i,
         /^https?:\/\/instagr\.am\/(?:[a-zA-Z0-9_\-\.]+\/)?p\/([a-zA-Z0-9_-]+)/i,
         /^https?:\/\/www\.instagram\.com\/(?:[a-zA-Z0-9_\-\.]+\/)?(?:p|tv)\/([a-zA-Z0-9_-]+)$/i
     ],
@@ -14,66 +21,49 @@ module.exports = {
         "oembed-author",
         // "og-image", // it's the same as size L
         "domain-icon",
-        "oembed-error"
+        "fb-error"
     ],
 
-    getMeta: function (oembed, urlMatch, meta) {
-        var title = meta.og && meta.og.title ? meta.og.title.match(/([^•\":“]+)/i)[0]: '';
+    provides: ['ipOG', '__allowInstagramMeta'],
 
-        if (!title || /login/i.test(title)) {
+    getMeta: function (oembed, urlMatch, ipOG) {
+        var title = ipOG.title ? ipOG.title.match(/([^•\":“]+)/i)[0]: '';
+        var description = oembed.title;
+
+        if (!description || !title || /login/i.test(title)) {
             var $container = cheerio('<div>');
             try {
                 $container.html(decodeHTML5(oembed.html));
             } catch (ex) {}
 
-            var $a = $container.find(`p a[href*="${oembed.author_name}"], p a[href*="${urlMatch[1]}"]`);
+            if (!title || /login/i.test(title)) {
+                var $a = $container.find(`p a[href*="${oembed.author_name}"], p a[href*="${urlMatch[1]}"]`);
 
-            if ($a.length == 1) {
-                title = $a.text();
-                title += /@/.test(title) ? '' : ` (@${oembed.author_name})`;
-            } else {
-                title = `Instagram (@${oembed.author_name})`;
+                if ($a.length == 1) {
+                    title = $a.text();
+                    title += /@/.test(title) ? '' : ` (@${oembed.author_name})`;
+                } else {
+                    title = `Instagram (@${oembed.author_name})`;
+                }
+            }
+
+            if (!description) {
+                var $a = $container.find(`p a[href*="${urlMatch[1]}"]`);
+                description = $a.text();
             }
         }
 
         return {
             title: title,
-            description: oembed.title
+            description: description
         }
     },
 
-    getLinks: function(url, urlMatch, meta, oembed, options) {
-        var src = 'https://instagram.com/p/' + urlMatch[1] + '/media/?size=';
+    getLinks: function(url, urlMatch, ipOG, oembed, options) {
 
-        var aspect = oembed.thumbnail_width && oembed.thumbnail_height ? oembed.thumbnail_width / oembed.thumbnail_height : 1/1
-
-        var links = [
-            // https://developers.facebook.com/docs/instagram/embedding/
-            // Instagram now seems to want the images be hot-linked as the shortcode media redirects AWS and other clouds to the login page.
-            // However, there's still a valid oembed thumbnail as of June 24, 2020. Let's use it if we can.
-            {
-                href: src + 't',
-                type: CONFIG.T.image,
-                rel: CONFIG.R.thumbnail,
-                width: 150,
-                height: 150 
-            }, {
-                href: src + 'm',
-                type: CONFIG.T.image,
-                rel: CONFIG.R.thumbnail,
-                width: 320,
-                height: Math.round(320 / aspect)
-            }, {
-                href: src + 'l',
-                type: CONFIG.T.image,
-                rel: (meta.og && meta.og.video || !meta.og) ? CONFIG.R.thumbnail : [CONFIG.R.image, CONFIG.R.thumbnail],
-                width: oembed.thumbnail_width && (oembed.thumbnail_width - 1) || 1080, // It's actually 1080, but let's try and give oembed.thumbnail a higher priority
-                height: oembed.thumbnail_height && (oembed.thumbnail_height - 1) ||  Math.round(1080 / aspect)
-            }
-        ];
+        var links = [];
 
         if (oembed.thumbnail_url) {
-            // Return expanded image thumbnails as /p/shortcode/media redirects cloud users to the login page.
             links.push({
                 href: oembed.thumbnail_url,
                 type: CONFIG.T.image,
@@ -82,18 +72,27 @@ module.exports = {
             });
         }
 
-        if (meta.og && meta.og.video) {
+        if (ipOG.image) {
             links.push({
-                href: meta.og.video.url,
-                type: meta.og.video.type || CONFIG.T.maybe_text_html,
+                href: ipOG.image,
+                type: CONFIG.T.image,
+                rel: ipOG.video ? CONFIG.R.thumbnail : [CONFIG.R.image, CONFIG.R.thumbnail]
+                // No media - let's validate image as it may be expired.
+            });
+        }        
+
+        if (ipOG.video) {
+            links.push({
+                href: ipOG.video.url,
+                type: ipOG.video.type || CONFIG.T.maybe_text_html,
                 rel: [CONFIG.R.player, CONFIG.R.html5],
-                "aspect-ratio": meta.og.video.width / meta.og.video.height
+                "aspect-ratio": ipOG.video.width / ipOG.video.height
             });
             links.push({
-                href: meta.og.video.secure_url,
-                type: meta.og.video.type || CONFIG.T.maybe_text_html,
+                href: ipOG.video.secure_url,
+                type: ipOG.video.type || CONFIG.T.maybe_text_html,
                 rel: [CONFIG.R.player, CONFIG.R.html5],
-                "aspect-ratio": meta.og.video.width / meta.og.video.height
+                "aspect-ratio": ipOG.video.width / ipOG.video.height
             });
         }
 
@@ -121,8 +120,8 @@ module.exports = {
 
             // Fix for private posts that later became public
             if (urlMatch[1] && urlMatch[1].length > 30 
-                && /^https?:\/\/www\.instagram\.com\/p\/([a-zA-Z0-9_-]+)\/?/i.test(meta.canonical)) {
-                html = html.replace(url, meta.canonical);
+                && /^https?:\/\/www\.instagram\.com\/p\/([a-zA-Z0-9_-]+)\/?/i.test(ipOG.url)) {
+                html = html.replace(url, ipOG.url);
             }
 
             var app = {
@@ -157,10 +156,13 @@ module.exports = {
         // Avoid any issues with possible redirects,
         // But let private posts (>10 digits) redirect and then fail with 404 (oembed-error) and a message.
         var result = {};
-        options.followHTTPRedirect = true; 
+        options.followHTTPRedirect = true;
+        options.exposeStatusCode = true;        
 
         if (!options.getRequestOptions('instagram.meta', true)) {
-            result.meta = {};
+            result.ipOG = {};
+        } else {
+            result.__allowInstagramMeta = true;
         }
 
         if (urlMatch[1] && urlMatch[1].length > 30) {
@@ -175,14 +177,13 @@ module.exports = {
     },
 
     tests: [{
-        page: "http://blog.instagram.com/",
-        selector: ".photogrid a"
+        noFeeds: true
     },
         "https://www.instagram.com/p/HbBy-ExIyF/",
         "https://www.instagram.com/p/a_v1-9gTHx/",
         "https://www.instagram.com/p/-111keHybD/",
         {
-            skipMixins: ["oembed-title", "oembed-error"],
+            skipMixins: ["oembed-title", "fb-error"],
             skipMethods: ['getData']
         }
     ]
