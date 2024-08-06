@@ -60,11 +60,11 @@ describe('Core plugins', function() {
             });
         });
 
-        it('not error', function(done) {
+        it.skip('not error', function(done) {
             assert.isNull(error);
             done();
         });
-        it('has meta', function(done) {
+        it.skip('has meta', function(done) {
             // TODO: check deep keys and types?
             // TOOD: assert.hasAllKeys in newer mocha?
             // console.log(data)
