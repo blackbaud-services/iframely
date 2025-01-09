@@ -52,13 +52,13 @@ describe('Core plugins', function() {
 
         var error, data;
         
-        before(function(done) {
-            iframely("http://www.bbc.com/news/science-environment-23767323", 'meta', findWhitelistRecordFor, function(_error, _data) {
-                error = _error;
-                data = _data;
-                done();
-            });
-        });
+        // before(function(done) {
+        //     iframely("http://www.bbc.com/news/science-environment-23767323", 'meta', findWhitelistRecordFor, function(_error, _data) {
+        //         error = _error;
+        //         data = _data;
+        //         done();
+        //     });
+        // });
 
         it.skip('not error', function(done) {
             assert.isNull(error);
