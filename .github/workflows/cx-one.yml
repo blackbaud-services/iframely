@@ -18,7 +18,7 @@ jobs:
           cx_tenant: blackbaud
           cx_client_id: ${{ secrets.CX_CLIENT_ID }}
           cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }}
-          project_name: ${{ github.repository }}
+          project_name: iframely
           branch: ${{ github.head_ref || github.ref }}
           # github_token: # optional, default is ${{ github.token }}
           additional_params: --async --sast-preset-name "BlackbaudSAST"
