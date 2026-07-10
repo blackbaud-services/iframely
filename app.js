@@ -1,5 +1,5 @@
-const { eventContext } = require('@vendia/serverless-express/src/middleware')
 import { cacheMiddleware, NotFound } from './utils.js';
+// import awsServerlessExpressMiddleware from 'aws-serverless-express/middleware'
 import CONFIG from './config.loader.js';
 global.CONFIG = CONFIG;
 
@@ -37,13 +37,13 @@ if (CONFIG.allowedOrigins) {
   });
 }
 app.disable( 'x-powered-by' );
-app.use(eventContext())
 app.use(function(req, res, next) {
   res.setHeader('X-Powered-By', 'Iframely');
   next();
 });
 
 app.use(cacheMiddleware);
+// app.use(awsServerlessExpressMiddleware.eventContext());
 
 import apiViews from './modules/api/views.js';
 import debugViews from './modules/debug/views.js';
