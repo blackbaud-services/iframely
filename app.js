@@ -1,4 +1,5 @@
 import { cacheMiddleware, NotFound } from './utils.js';
+// import awsServerlessExpressMiddleware from 'aws-serverless-express/middleware'
 import CONFIG from './config.loader.js';
 global.CONFIG = CONFIG;
 
@@ -42,6 +43,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(cacheMiddleware);
+// app.use(awsServerlessExpressMiddleware.eventContext());
 
 import apiViews from './modules/api/views.js';
 import debugViews from './modules/debug/views.js';
