@@ -1,5 +1,5 @@
 'use strict'
-const serverlessExpress = require('@vendia/serverless-express')
+import serverlessExpress from '@vendia/serverless-express';
 import app from './app.js'
 
 // NOTE: If you get ERR_CONTENT_DECODING_FAILED in your browser, this is likely
@@ -26,4 +26,4 @@ const binaryMimeTypes = [
   'text/xml'
 ]
 
-exports.handler = serverlessExpress({ app, binaryMimeTypes })
+export const handler = serverlessExpress({ app, binaryMimeTypes })
