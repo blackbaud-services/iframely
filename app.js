@@ -1,4 +1,3 @@
-const { eventContext } = require('@vendia/serverless-express/src/middleware')
 import { cacheMiddleware, NotFound } from './utils.js';
 import CONFIG from './config.loader.js';
 global.CONFIG = CONFIG;
@@ -37,7 +36,6 @@ if (CONFIG.allowedOrigins) {
   });
 }
 app.disable( 'x-powered-by' );
-app.use(eventContext())
 app.use(function(req, res, next) {
   res.setHeader('X-Powered-By', 'Iframely');
   next();
