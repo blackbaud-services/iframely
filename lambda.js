@@ -26,6 +26,6 @@ const binaryMimeTypes = [
   'text/xml'
 ]
 
-export const handler = serverlessExpress({ app, binaryMimeTypes })
+export const handler = awsServerlessExpress({ app, binaryMimeTypes })
 
 export default handler
